@@ -1,0 +1,252 @@
+/************************************************************
+NEXT-GEN HR SAAS (ITERATION 10 - SaaS ARCHITECTURE MVP)
+Frontend: React (Next.js compatible)
+Backend: MOCK (localStorage) -> designed for Supabase upgrade
+Design: Slack / YouTube inspired (salbei, black, white)
+************************************************************/
+
+import { useEffect, useState } from "react";
+
+const STORAGE_KEY = "devos_saas_v1";
+
+/***********************
+THEME
+************************/
+const theme = {
+  bg: "bg-[#f6f7f6]",
+  sidebar: "bg-white",
+  primary: "bg-black",
+  accent: "bg-[#b7c9b0]", // salbei
+  text: "text-black"
+};
+
+/***********************
+MOCK AI ENGINE
+************************/
+function aiSummary(feedback = []) {
+  return {
+    highlights: "Strong collaboration and ownership shown in recent work.",
+    remarks: "Some delays in communication under pressure situations.",
+    opportunities: "Increase proactive updates and structured reporting."
+  };
+}
+
+function aiDevelopmentArea(area = {}) {
+  return {
+    why: "The user aims to improve strategic communication and leadership impact.",
+    what: "Improve clarity in stakeholder communication and prioritization.",
+    change: "Shift from reactive communication to structured proactive updates."
+  };
+}
+
+function aiPathway() {
+  return "Focus on weekly reflection, structured feedback loops, and applied leadership tasks.";
+}
+
+/***********************
+APP
+************************/
+export default function App() {
+  const [data, setData] = useState(() => {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    return saved
+      ? JSON.parse(saved)
+      : {
+          user: null,
+          users: [],
+          feedback: [],
+          devAreas: [],
+          pathways: [],
+          role: "employee"
+        };
+  });
+
+  const [view, setView] = useState("login");
+  const [input, setInput] = useState("");
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  }, [data]);
+
+  /***********************
+LOGIN (mock)
+************************/
+function login(name) {
+  const newUser = {
+    id: Date.now(),
+    name,
+    title: "Employee",
+    photo: "https://via.placeholder.com/40"
+  };
+
+  setData({ ...data, user: newUser });
+  setView("overview");
+}
+
+/***********************
+FEEDBACK
+************************/
+function addFeedback() {
+  if (!input) return;
+
+  const fb = {
+    id: Date.now(),
+    text: input,
+    from: data.user,
+    to: data.user
+  };
+
+  setData({ ...data, feedback: [fb, ...data.feedback] });
+  setInput("");
+}
+
+/***********************
+DEV AREA
+************************/
+function createDevArea() {
+  const ai = aiDevelopmentArea();
+
+  const area = {
+    id: Date.now(),
+    title: "Development Area",
+    goals: ["Goal 1", "Goal 2", "Goal 3"],
+    ai
+  };
+
+  setData({ ...data, devAreas: [area, ...data.devAreas] });
+}
+
+/***********************
+UI
+************************/
+if (!data.user) {
+  return (
+    <div className="flex items-center justify-center h-screen bg-gray-100">
+      <div className="bg-white p-6 rounded-xl shadow w-80">
+        <h2 className="text-lg font-bold mb-4">Login</h2>
+        <input
+          className="border p-2 w-full mb-2"
+          placeholder="Name"
+          onKeyDown={(e) => e.key === "Enter" && login(e.target.value)}
+        />
+        <button className="bg-black text-white w-full p-2 rounded"
+          onClick={() => login("User")}
+        >
+          Enter
+        </button>
+      </div>
+    </div>
+  );
+}
+
+return (
+  <div className={`flex ${theme.bg} min-h-screen`}> 
+
+    {/* SIDEBAR */}
+    <div className="w-64 bg-white border-r p-4">
+      <div className="flex items-center gap-2 mb-6">
+        <img src={data.user.photo} className="w-8 h-8 rounded-full" />
+        <div>
+          <div className="font-bold">{data.user.name}</div>
+          <div className="text-xs opacity-60">{data.user.title}</div>
+        </div>
+      </div>
+
+      {[
+        "overview",
+        "feedback",
+        "development",
+        "pathway"
+      ].map(v => (
+        <div
+          key={v}
+          onClick={() => setView(v)}
+          className="p-2 hover:bg-gray-100 rounded cursor-pointer"
+        >
+          {v}
+        </div>
+      ))}
+    </div>
+
+    {/* MAIN */}
+    <div className="flex-1 p-6">
+
+      {/* OVERVIEW */}
+      {view === "overview" && (
+        <div className="grid grid-cols-2 gap-4">
+
+          <div className="bg-white p-4 rounded-xl">
+            <h3 className="font-bold">Feedback Summary</h3>
+            <p>{aiSummary(data.feedback).highlights}</p>
+            <p>{aiSummary(data.feedback).remarks}</p>
+            <p>{aiSummary(data.feedback).opportunities}</p>
+          </div>
+
+          <div className="bg-white p-4 rounded-xl">
+            <h3 className="font-bold">Development Summary</h3>
+            <p>{aiDevelopmentArea().why}</p>
+            <p>{aiDevelopmentArea().what}</p>
+          </div>
+
+          <div className="bg-white p-4 rounded-xl col-span-2">
+            <h3 className="font-bold">Next Steps</h3>
+            <p>{aiPathway()}</p>
+          </div>
+
+        </div>
+      )}
+
+      {/* FEEDBACK */}
+      {view === "feedback" && (
+        <div>
+          <input
+            className="border p-2 w-full"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            placeholder="Write feedback"
+          />
+          <button
+            className="bg-black text-white p-2 mt-2"
+            onClick={addFeedback}
+          >
+            Add
+          </button>
+
+          <div className="mt-4">
+            {data.feedback.map(f => (
+              <div key={f.id} className="bg-white p-2 mb-2 rounded">
+                <b>{f.from.name}</b>: {f.text}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* DEV AREA */}
+      {view === "development" && (
+        <div>
+          <button className="bg-black text-white p-2" onClick={createDevArea}>
+            Create Dev Area
+          </button>
+
+          {data.devAreas.map(a => (
+            <div key={a.id} className="bg-white p-4 mt-2 rounded">
+              <h3 className="font-bold">{a.title}</h3>
+              <p>{a.ai.why}</p>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* PATHWAY */}
+      {view === "pathway" && (
+        <div className="bg-white p-4 rounded">
+          <h3 className="font-bold">Pathway</h3>
+          <p>{aiPathway()}</p>
+        </div>
+      )}
+
+    </div>
+  </div>
+);
+}
